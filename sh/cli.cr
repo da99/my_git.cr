@@ -1,10 +1,19 @@
 
 require "../src/my_git"
 
-case ARGV.first?
-when "watch"
-  My_Git::Log.watch { |f|
-    puts f
+case
+when ARGV.first? == "dev" && ARGV.last? == "watch"
+  puts "... watching"
+  loop {
+    My_Git::Files.compile { |f|
+      case f
+      when "compile!"
+        DA_Process.out!("my_git.cr", %w[dev run], input: STDOUT)
+      else
+        puts "--- file change: #{f}"
+      end
+    }
+    sleep 0.5
   }
 
 when "ls-changed"

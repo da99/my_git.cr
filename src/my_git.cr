@@ -1,15 +1,17 @@
 
-require "shell_out"
+require "da_process"
+require "inspect_bang"
 
 module My_Git
 
-  module Log
+  module Files
 
     PATH = "tmp/out/changed.txt"
+    PATH_DO_COMPILE = "tmp/out/do_compile"
     RECORDS = {} of String => Int64
     CHANGED = {} of String => Int64
 
-    def self.load
+    def self.load_changes
       return if !RECORDS.empty?
 
       Dir.mkdir_p(File.dirname(PATH))
@@ -24,7 +26,7 @@ module My_Git
       !RECORDS[file_name]? || RECORDS[file_name] != epoch
     end
 
-    def self.update
+    def self.update_log
       Dir.mkdir_p(File.dirname(PATH))
       ls_files.each_line { |line|
         RECORDS[line] = File.stat(line).mtime.epoch
@@ -35,11 +37,11 @@ module My_Git
     end
 
     def self.ls_files
-      shell_out("git ls-files --cached --others --exclude-standard")
+      DA_Process.output!("git ls-files --cached --others --exclude-standard")
     end
 
     def self.changed_files
-      My_Git::Log.load
+      load_changes
       files = [] of String
       ls_files.each_line { |line|
         if changed?(line, File.stat(line).mtime.epoch)
@@ -49,18 +51,18 @@ module My_Git
       files
     end
 
-    def self.watch
-      keep_running = true
-      Signal::INT.trap {
-        keep_running = false
-        Signal::INT.reset
-      }
-      while keep_running
-        My_Git::Log.changed_files.each { |f| yield f }
-        My_Git::Log.update
-        sleep 1
-      end
+    def self.compile_files
     end
+
+    def self.compile
+      return false if !File.exists?(PATH_DO_COMPILE)
+      changed_files.each { |f| yield f }
+      yield "compile!"
+      File.delete(PATH_DO_COMPILE)
+      update_log
+
+      true
+    end # === def self.watch
 
   end # === module Log
 

@@ -1,7 +1,9 @@
 name: my_git
 version: 0.0.0
 dependencies:
+  inspect_bang:
+    github: da99/inspect_bang.cr
   da_spec:
     github: da99/da_spec.cr
-  shell_out:
-    github: da99/shell_out
+  da_process:
+    github: da99/da_process.cr
